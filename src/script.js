@@ -1,6 +1,21 @@
 import './style.css'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+// Guify debugger
+import guify from 'guify'
+
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
+import { BokehPass } from './Passes/BokehPass';
+// import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js';
+
+// Webgl shaders
+import terrainVertexShader from './shaders/terrain/vertex.glsl'
+import terrainFragmentShader from './shaders/terrain/fragment.glsl'
+import terrainDepthVertexShader from './shaders/terrainDepth/vertex.glsl'
+import terrainDepthFragmentShader from './shaders/terrainDepth/fragment.glsl'
+
+
 
 /**
  * Base
@@ -12,18 +27,33 @@ const canvas = document.querySelector('canvas.webgl')
 const scene = new THREE.Scene()
 
 /**
+ * Debug
+ */
+
+var gui = new guify({
+    align: 'right',
+    theme: 'dark',
+    barMode: 'none'
+});
+
+const guiDummy = {}
+guiDummy.clearColor = '#141d29';
+
+
+/**
  * Sizes
  */
 const sizes = {
     width: window.innerWidth,
-    height: window.innerHeight
+    height: window.innerHeight,
+    pixelRatio: Math.min(window.devicePixelRatio, 2)
 }
 
-window.addEventListener('resize', () =>
-{
+window.addEventListener('resize', () => {
     // Update sizes
     sizes.width = window.innerWidth
     sizes.height = window.innerHeight
+    sizes.pixelRatio = Math.min(window.devicePixelRatio, 2)
 
     // Update camera
     camera.aspect = sizes.width / sizes.height
@@ -31,7 +61,16 @@ window.addEventListener('resize', () =>
 
     // Update renderer
     renderer.setSize(sizes.width, sizes.height)
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    renderer.setPixelRatio(sizes.pixelRatio)
+
+    // Update effect composer
+    effectComposer.setSize(sizes.width, sizes.height)
+    effectComposer.setPixelRatio(sizes.pixelRatio)
+
+    // Update bokehPass
+    bokehPass.renderTargetDepth.width = sizes.width * sizes.pixelRatio
+    bokehPass.renderTargetDepth.height = sizes.height * sizes.pixelRatio
+
 })
 
 /**
@@ -49,13 +88,217 @@ const controls = new OrbitControls(camera, canvas)
 controls.enableDamping = true
 
 /**
- * Cube
+ * terrain
  */
-const cube = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshBasicMaterial({ color: 0xff0000 })
-)
-scene.add(cube)
+
+const terrain = {}
+
+// Geometry
+terrain.geometry = new THREE.PlaneGeometry(1, 1, 1000, 1000)
+terrain.geometry.rotateX(- Math.PI * 0.5)
+
+// Texture
+terrain.texture = {}
+terrain.texture.linesCount = 5
+terrain.texture.bigLineWidth = 0.04
+terrain.texture.smallLineWidth = 0.01
+terrain.texture.smallLineAlpha = 0.5
+terrain.texture.width = 32
+terrain.texture.height = 128
+terrain.texture.canvas = document.createElement('canvas');
+terrain.texture.canvas.width = terrain.texture.width
+terrain.texture.canvas.height = terrain.texture.height
+terrain.texture.canvas.style.position = 'fixed'
+terrain.texture.canvas.style.top = 0
+terrain.texture.canvas.style.left = 0
+terrain.texture.canvas.style.zIndex = 1
+document.body.append(terrain.texture.canvas)
+
+terrain.texture.context = terrain.texture.canvas.getContext('2d')
+
+terrain.texture.instance = new THREE.CanvasTexture(terrain.texture.canvas)
+terrain.texture.instance.wrapS = THREE.RepeatWrapping
+terrain.texture.instance.wrapT = THREE.RepeatWrapping
+terrain.texture.instance.magFilter = THREE.NearestFilter
+
+terrain.texture.update = () => {
+
+    terrain.texture.context.clearRect(0, 0, terrain.texture.width, terrain.texture.height)
+
+    // Fat Lines
+    const actualFatLineWidth = Math.round(terrain.texture.height * terrain.texture.bigLineWidth)
+    terrain.texture.context.globalAlpha = 1
+    terrain.texture.context.fillStyle = '#ffffff'
+
+    terrain.texture.context.fillRect(
+        0,
+        0,
+        terrain.texture.width,
+        actualFatLineWidth
+    )
+
+    // Thin lines
+    const actualThinLineWidth = Math.round(terrain.texture.height * terrain.texture.smallLineWidth)
+    const smallLinesCount = terrain.texture.linesCount - 1
+
+    for(let i = 0; i < smallLinesCount; i++) {
+        terrain.texture.context.globalAlpha = terrain.texture.smallLineAlpha
+        terrain.texture.context.fillRect(
+            0,
+            actualFatLineWidth + Math.round((terrain.texture.height - actualFatLineWidth) / terrain.texture.linesCount) * (i + 1),
+            terrain.texture.width,
+            actualThinLineWidth
+        )
+    }
+
+    // Update texture instance
+    terrain.texture.instance.needsUpdate = true
+}
+
+terrain.texture.update()
+
+gui.Register({
+    type: 'folder',
+    label: 'terrain',
+    open: true
+})
+
+gui.Register({
+    folder: 'terrain',
+    type: 'folder',
+    label: 'terrainTexture',
+    open: true
+})
+gui.Register({
+    folder: 'terrainTexture',
+    object: terrain.texture,
+    property: 'linesCount',
+    type: 'range',
+    label: 'linesCount',
+    min: 1,
+    max: 10,
+    step: 1,
+    onChange: terrain.texture.update
+})
+gui.Register({
+    folder: 'terrainTexture',
+    object: terrain.texture,
+    property: 'bigLineWidth',
+    type: 'range',
+    label: 'bigLineWidth',
+    min: 0,
+    max: 0.1,
+    step: 0.0001,
+    onChange: terrain.texture.update
+})
+gui.Register({
+    folder: 'terrainTexture',
+    object: terrain.texture,
+    property: 'smallLineWidth',
+    type: 'range',
+    label: 'smallLineWidth',
+    min: 0,
+    max: 0.1,
+    step: 0.0001,
+    onChange: terrain.texture.update
+})
+gui.Register({
+    folder: 'terrainTexture',
+    object: terrain.texture,
+    property: 'smallLineAlpha',
+    type: 'range',
+    label: 'smallLineAlpha',
+    min: 0,
+    max: 1,
+    step: 0.001,
+    onChange: terrain.texture.update
+})
+
+// Uniforms
+terrain.uniforms = {
+    uTextureFrequency: {
+        value: 10.0
+    },
+    uTexture: {
+        value: terrain.texture.instance
+    },
+    uElevation: {
+        value: 2
+    },
+    uTime: {
+        value: 0
+    }
+}
+
+gui.Register({
+    folder: 'terrain',
+    type: 'folder',
+    label: 'terrainMaterial',
+    open: true
+})
+// Debug elevation
+gui.Register({
+    folder: 'terrainMaterial',
+    object: terrain.uniforms.uElevation,
+    property: 'value',
+    type: 'range',
+    label: 'uElevation',
+    min: 0,
+    max: 5,
+    step: 0.001,
+})
+gui.Register({
+    folder: 'terrainMaterial',
+    object: terrain.uniforms.uTextureFrequency,
+    property: 'value',
+    type: 'range',
+    label: 'uTextureFrequency',
+    min: 0.1,
+    max: 50,
+    step: 0.01,
+})
+
+// Material
+terrain.material = new THREE.ShaderMaterial({
+    transparent: true,
+    side: THREE.DoubleSide,
+    vertexShader: terrainVertexShader,
+    fragmentShader: terrainFragmentShader,
+    uniforms: terrain.uniforms
+})
+
+// Own Depth Material
+const uniforms = THREE.UniformsUtils.merge( [
+    THREE.UniformsLib.common,
+    THREE.UniformsLib.displacementmap
+])
+terrain.depthMaterial = new THREE.ShaderMaterial({
+    uniforms: uniforms,
+    vertexShader: terrainDepthVertexShader,
+    fragmentShader: terrainDepthFragmentShader
+});
+
+terrain.depthMaterial.morphTargets = false
+terrain.depthMaterial.map = null
+terrain.depthMaterial.alphaMap = null
+terrain.depthMaterial.displacementMap = null
+terrain.depthMaterial.displacementScale = 1
+terrain.depthMaterial.displacementBias = 0
+terrain.depthMaterial.wireframe = false
+terrain.depthMaterial.wireframeLinewidth = 1
+terrain.depthMaterial.fog = false
+
+
+terrain.depthMaterial.depthPacking = THREE.RGBADepthPacking;
+terrain.depthMaterial.blending = THREE.NoBlending;
+
+
+// Mesh
+terrain.mesh = new THREE.Mesh(terrain.geometry, terrain.material);
+terrain.mesh.scale.set(10, 10, 10)
+
+scene.add(terrain.mesh)
+
 
 /**
  * Renderer
@@ -64,8 +307,98 @@ const renderer = new THREE.WebGLRenderer({
     canvas: canvas,
     antialias: true,
 })
+renderer.setClearColor(guiDummy.clearColor, 1)
+renderer.outputEncoding = THREE.sRGBEncoding
 renderer.setSize(sizes.width, sizes.height)
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+renderer.setPixelRatio(sizes.pixelRatio)
+
+gui.Register({
+    type: 'folder',
+    label: 'renderer',
+    open: true
+})
+gui.Register({
+    folder: 'renderer',
+    object: guiDummy,
+    property: 'clearColor',
+    type: 'color',
+    label: 'clearColor',
+    format: 'hex',
+    onChange: () => {
+        renderer.setClearColor(guiDummy.clearColor, 1)
+    }
+});
+
+// effect composer
+const renderTarget = new THREE.WebGLMultipleRenderTargets(600, 800, {
+    minFilter: THREE.LinearFilter,
+    magFilter: THREE.LinearFilter,
+    format: THREE.RGBAFormat,
+    encoding: THREE.sRGBEncoding
+})
+const effectComposer = new EffectComposer(renderer)
+effectComposer.setSize(sizes.width, sizes.height)
+effectComposer.setPixelRatio(sizes.pixelRatio)
+
+// Render Pass
+const renderPass = new RenderPass(scene, camera)
+effectComposer.addPass(renderPass)
+
+// Bokeh Pass Blur
+const bokehPass = new BokehPass(scene, camera, {
+    focus: 1.0,
+    aperture: 0.025,
+    maxblur: 0.01,
+
+    width: sizes.width * sizes.pixelRatio,
+    height: sizes.height * sizes.pixelRatio,
+});
+
+bokehPass.enabled = false
+effectComposer.addPass(bokehPass)
+
+gui.Register({
+    type: 'folder',
+    label: 'bokehPass',
+    open: true
+})
+gui.Register({
+    folder: 'bokehPass',
+    object: bokehPass,
+    property: 'enabled',
+    type: 'checkbox',
+    label: 'enabeld',
+})
+gui.Register({
+    folder: 'bokehPass',
+    object: bokehPass.materialBokeh.uniforms.focus,
+    property: 'value',
+    type: 'range',
+    label: 'focus',
+    min: 0,
+    max: 10,
+    step: 0.01,
+})
+gui.Register({
+    folder: 'bokehPass',
+    object: bokehPass.materialBokeh.uniforms.aperture,
+    property: 'value',
+    type: 'range',
+    label: 'aperture',
+    min: 0.0002,
+    max: 0.1,
+    step: 0.0001,
+})
+gui.Register({
+    folder: 'bokehPass',
+    object: bokehPass.materialBokeh.uniforms.maxblur,
+    property: 'value',
+    type: 'range',
+    label: 'maxblur',
+    min: 0,
+    max: 0.02,
+    step: 0.0001,
+})
 
 /**
  * Animate
@@ -73,8 +406,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 const clock = new THREE.Clock()
 let lastElapsedTime = 0
 
-const tick = () =>
-{
+const tick = () => {
     const elapsedTime = clock.getElapsedTime()
     const deltaTime = elapsedTime - lastElapsedTime
     lastElapsedTime = elapsedTime
@@ -82,8 +414,12 @@ const tick = () =>
     // Update controls
     controls.update()
 
+    // Update terrain
+    terrain.material.uniforms.uTime.value = elapsedTime
+
     // Render
-    renderer.render(scene, camera)
+    // renderer.render(scene, camera)
+    effectComposer.render(scene, camera)
 
     // Call tick again on the next frame
     window.requestAnimationFrame(tick)
