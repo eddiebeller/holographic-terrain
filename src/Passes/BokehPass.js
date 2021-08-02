@@ -1,5 +1,6 @@
 import {
 	Color,
+	Mesh,
 	MeshDepthMaterial,
 	NearestFilter,
 	NoBlending,
@@ -87,7 +88,18 @@ class BokehPass extends Pass {
 
 		// Render depth into texture
 
-		this.scene.overrideMaterial = this.materialDepth;
+		// this.scene.overrideMaterial = this.materialDepth;
+
+		this.scene.traverse(_child => {
+			if (_child instanceof Mesh) {
+				_child.userData.originalMaterial = _child.material
+				if (_child.userData.depthMaterial) {
+					_child.material = _child.userData.depthMaterial
+				} else {
+					_child.material = this.materialDepth
+				}
+			}
+		})
 
 		renderer.getClearColor( this._oldClearColor );
 		const oldClearAlpha = renderer.getClearAlpha();
@@ -119,7 +131,12 @@ class BokehPass extends Pass {
 
 		}
 
-		this.scene.overrideMaterial = null;
+		// this.scene.overrideMaterial = null;
+		this.scene.traverse(_child => {
+			if (_child instanceof Mesh) {
+				_child.material = _child.userData.originalMaterial
+			}
+		})
 		renderer.setClearColor( this._oldClearColor );
 		renderer.setClearAlpha( oldClearAlpha );
 		renderer.autoClear = oldAutoClear;

@@ -143,6 +143,7 @@ terrain.texture.update = () => {
 
     for(let i = 0; i < smallLinesCount; i++) {
         terrain.texture.context.globalAlpha = terrain.texture.smallLineAlpha
+        terrain.texture.context.fillStyle = '#00ffff'
         terrain.texture.context.fillRect(
             0,
             actualFatLineWidth + Math.round((terrain.texture.height - actualFatLineWidth) / terrain.texture.linesCount) * (i + 1),
@@ -270,33 +271,25 @@ terrain.material = new THREE.ShaderMaterial({
 // Own Depth Material
 const uniforms = THREE.UniformsUtils.merge( [
     THREE.UniformsLib.common,
-    THREE.UniformsLib.displacementmap
+    THREE.UniformsLib.displacementmap,
 ])
+for (const uniformKey in terrain.uniforms) {
+    uniforms[uniformKey] = terrain.uniforms[uniformKey]
+}
 terrain.depthMaterial = new THREE.ShaderMaterial({
     uniforms: uniforms,
     vertexShader: terrainDepthVertexShader,
     fragmentShader: terrainDepthFragmentShader
 });
 
-terrain.depthMaterial.morphTargets = false
-terrain.depthMaterial.map = null
-terrain.depthMaterial.alphaMap = null
-terrain.depthMaterial.displacementMap = null
-terrain.depthMaterial.displacementScale = 1
-terrain.depthMaterial.displacementBias = 0
-terrain.depthMaterial.wireframe = false
-terrain.depthMaterial.wireframeLinewidth = 1
-terrain.depthMaterial.fog = false
-
-
 terrain.depthMaterial.depthPacking = THREE.RGBADepthPacking;
 terrain.depthMaterial.blending = THREE.NoBlending;
 
 
 // Mesh
-terrain.mesh = new THREE.Mesh(terrain.geometry, terrain.material);
+terrain.mesh = new THREE.Mesh(terrain.geometry, terrain.material)
 terrain.mesh.scale.set(10, 10, 10)
-
+terrain.mesh.userData.depthMaterial = terrain.depthMaterial
 scene.add(terrain.mesh)
 
 
@@ -305,7 +298,7 @@ scene.add(terrain.mesh)
  */
 const renderer = new THREE.WebGLRenderer({
     canvas: canvas,
-    antialias: true,
+    // antialias: true,
 })
 renderer.setClearColor(guiDummy.clearColor, 1)
 renderer.outputEncoding = THREE.sRGBEncoding
@@ -347,14 +340,15 @@ effectComposer.addPass(renderPass)
 // Bokeh Pass Blur
 const bokehPass = new BokehPass(scene, camera, {
     focus: 1.0,
-    aperture: 0.025,
+    // aperture: 0.025,
+    aperture: 0.006,
     maxblur: 0.01,
 
     width: sizes.width * sizes.pixelRatio,
     height: sizes.height * sizes.pixelRatio,
 });
 
-bokehPass.enabled = false
+// bokehPass.enabled = false
 effectComposer.addPass(bokehPass)
 
 gui.Register({
@@ -415,7 +409,7 @@ const tick = () => {
     controls.update()
 
     // Update terrain
-    terrain.material.uniforms.uTime.value = elapsedTime
+    terrain.uniforms.uTime.value = elapsedTime
 
     // Render
     // renderer.render(scene, camera)
