@@ -232,9 +232,10 @@ terrain.uniforms = {
     uHslHue: {value: 1.0}, // 1.0
     uHslHueOffset: {value: 0 }, // 0
     uHslHueFrequency: {value: 10.0 }, // 10.0
+    uHslTimeFrequency: {value: 0.03 }, // 0.05
     uHslLightness: {value: 0.75}, // 0.75
     uHslLightnessVariation: {value: 0.25}, // 0.25
-    uHslLightnessFrequency: {value: 20.0 } // 20.0
+    uHslLightnessFrequency: {value: 20.0 }, // 20.0
 }
 
 gui.Register({
@@ -293,6 +294,16 @@ gui.Register({
     min: 0,
     max: 50,
     step: 0.01,
+})
+gui.Register({
+    folder: 'terrainMaterial',
+    object: terrain.uniforms.uHslTimeFrequency,
+    property: 'value',
+    type: 'range',
+    label: 'uHslTimeFrequency',
+    min: 0,
+    max: 0.2,
+    step: 0.001,
 })
 gui.Register({
     folder: 'terrainMaterial',
@@ -406,8 +417,8 @@ effectComposer.addPass(renderPass)
 // Bokeh Pass Blur
 const bokehPass = new BokehPass(scene, camera, {
     focus: 1.0,
-    // aperture: 0.025,
-    aperture: 0.006,
+    aperture: 0.025,
+    // aperture: 0.01,
     maxblur: 0.01,
 
     width: sizes.width * sizes.pixelRatio,
