@@ -100,7 +100,7 @@ terrain.geometry.rotateX(- Math.PI * 0.5)
 // Texture
 terrain.texture = {}
 terrain.texture.linesCount = 5
-terrain.texture.bigLineWidth = 0.04
+terrain.texture.bigLineWidth = 0.08
 terrain.texture.smallLineWidth = 0.01
 terrain.texture.smallLineAlpha = 0.5
 terrain.texture.width = 32
@@ -188,7 +188,7 @@ gui.Register({
     type: 'range',
     label: 'bigLineWidth',
     min: 0,
-    max: 0.1,
+    max: 0.3,
     step: 0.0001,
     onChange: terrain.texture.update
 })
@@ -228,7 +228,13 @@ terrain.uniforms = {
     },
     uTime: {
         value: 0
-    }
+    },
+    uHslHue: {value: 1.0}, // 1.0
+    uHslHueOffset: {value: 0 }, // 0
+    uHslHueFrequency: {value: 10.0 }, // 10.0
+    uHslLightness: {value: 0.75}, // 0.75
+    uHslLightnessVariation: {value: 0.25}, // 0.25
+    uHslLightnessFrequency: {value: 20.0 } // 20.0
 }
 
 gui.Register({
@@ -255,6 +261,66 @@ gui.Register({
     type: 'range',
     label: 'uTextureFrequency',
     min: 0.1,
+    max: 50,
+    step: 0.01,
+})
+gui.Register({
+    folder: 'terrainMaterial',
+    object: terrain.uniforms.uHslHue,
+    property: 'value',
+    type: 'range',
+    label: 'uHslHue',
+    min: 0,
+    max: 1,
+    step: 0.001,
+})
+gui.Register({
+    folder: 'terrainMaterial',
+    object: terrain.uniforms.uHslHueOffset,
+    property: 'value',
+    type: 'range',
+    label: 'uHslHueOffset',
+    min: 0,
+    max: 1,
+    step: 0.001,
+})
+gui.Register({
+    folder: 'terrainMaterial',
+    object: terrain.uniforms.uHslHueFrequency,
+    property: 'value',
+    type: 'range',
+    label: 'uHslHueFrequency',
+    min: 0,
+    max: 50,
+    step: 0.01,
+})
+gui.Register({
+    folder: 'terrainMaterial',
+    object: terrain.uniforms.uHslLightness,
+    property: 'value',
+    type: 'range',
+    label: 'uHslLightness',
+    min: 0,
+    max: 1,
+    step: 0.001,
+})
+gui.Register({
+    folder: 'terrainMaterial',
+    object: terrain.uniforms.uHslLightnessVariation,
+    property: 'value',
+    type: 'range',
+    label: 'uHslLightnessVariation',
+    min: 0,
+    max: 1,
+    step: 0.001,
+})
+gui.Register({
+    folder: 'terrainMaterial',
+    object: terrain.uniforms.uHslLightnessFrequency,
+    property: 'value',
+    type: 'range',
+    label: 'uHslLightnessFrequency',
+    min: 0,
     max: 50,
     step: 0.01,
 })
