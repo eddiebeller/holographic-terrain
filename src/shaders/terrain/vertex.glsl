@@ -11,6 +11,7 @@ void main() {
 
   // Elevation
   float elevation = getElevation(modelPosition.xz + vec2(uTime * 0.03, uTime * 0.0));
+
   modelPosition.y += elevation;
 
   vec4 viewPosition = viewMatrix * modelPosition;

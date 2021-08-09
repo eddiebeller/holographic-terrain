@@ -1,5 +1,6 @@
 uniform sampler2D uTexture;
 uniform float uTextureFrequency;
+uniform float uTextureOffset;
 uniform float uTime;
 uniform float uHslHue;
 uniform float uHslHueOffset;
@@ -35,10 +36,11 @@ void main() {
 
   // generate the rainbow color
   vec3 rainbowColor = getRainbowColor();
-  vec4 textureColor = texture2D(uTexture, vec2(0.0, vElevation * uTextureFrequency));
+  vec4 textureColor = texture2D(uTexture, vec2(0.0, vElevation * uTextureFrequency + uTextureOffset));
 
-  vec3 color = mix(uColor, rainbowColor, textureColor.r);\
+  vec3 color = mix(uColor, rainbowColor, textureColor.r);
 
+  // outer fade
   float fadeAmplitude = 0.2;
   float sideAlpha = 1.0 - max(
     smoothstep(0.5 - fadeAmplitude, 0.5, abs(vUv.x - 0.5)),

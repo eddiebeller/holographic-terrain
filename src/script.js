@@ -218,7 +218,8 @@ gui.Register({
 
 // Uniforms
 terrain.uniforms = {
-    uTextureFrequency: {value: 10.0 },
+    uTextureFrequency: { value: 10.0 },
+    uTextureOffset: { value: 0.585},
     uTexture: {value: terrain.texture.instance},
     uElevation: {value: 2},
     uTime: { value: 0},
@@ -257,6 +258,16 @@ gui.Register({
     min: 0.1,
     max: 50,
     step: 0.01,
+})
+gui.Register({
+    folder: 'terrainMaterial',
+    object: terrain.uniforms.uTextureOffset,
+    property: 'value',
+    type: 'range',
+    label: 'uTextureOffset',
+    min: 0,
+    max: 1,
+    step: 0.001,
 })
 gui.Register({
     folder: 'terrainMaterial',

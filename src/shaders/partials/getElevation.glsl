@@ -81,11 +81,16 @@ float getElevation(vec2 _position) {
 
   float elevation = 0.0;
 
+  // Valley
+  float valleyStrength = cos(_position.y * 1.5 + 3.1415) * 0.5 + 0.5;
+  elevation += valleyStrength * 0.4;
+
+
   // Genetal Elevation
-  elevation += getPerlinNoise2d(_position * 0.3) * 0.5;
+  elevation += getPerlinNoise2d(_position * 0.3) * 0.2 * (valleyStrength + 0.1);
 
   // Smaller details
-  elevation += getPerlinNoise2d(_position + 123.0) *  0.2;
+  elevation += getPerlinNoise2d(_position + 123.0) *  0.2 * (valleyStrength + 0.1);
 
   elevation *= uElevation;
 
