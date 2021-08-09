@@ -1,19 +1,41 @@
-*
-{
-    margin: 0;
-    padding: 0;
+@font-face {
+	font-family: 'Ailerons';
+	src: url('./fonts/Ailerons-Regular.woff') format('woff2'),
+		url('./fonts/Ailerons-Regular.woff') format('woff');
+	font-weight: normal;
+	font-style: normal;
+	font-display: block;
+}
+
+* {
+	margin: 0;
+	padding: 0;
 }
 
 html,
-body
-{
-    overflow: hidden;
+body {
+	overflow: hidden;
 }
 
-.webgl
-{
-    position: fixed;
-    top: 0;
-    left: 0;
-    outline: none;
+*::selection {
+	background-color: #ffffff22;
+}
+
+.webgl {
+	position: fixed;
+	top: 0;
+	left: 0;
+	outline: none;
+}
+.heading {
+	font-family: Ailerons, Helvetica, Arial, sans-serif;
+	position: absolute;
+	top: calc(50% - 14vmin / 2);
+	left: 0;
+	width: 100%;
+	text-align: center;
+	color: #ffffff;
+	font-size: 14vh;
+	text-transform: uppercase;
+	outline: none;
 }
