@@ -7,15 +7,12 @@ import guify from 'guify'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import { BokehPass } from './Passes/BokehPass';
-// import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js';
 
 // Webgl shaders
 import terrainVertexShader from './shaders/terrain/vertex.glsl'
 import terrainFragmentShader from './shaders/terrain/fragment.glsl'
 import terrainDepthVertexShader from './shaders/terrainDepth/vertex.glsl'
 import terrainDepthFragmentShader from './shaders/terrainDepth/fragment.glsl'
-
-
 
 /**
  * Base
@@ -25,6 +22,7 @@ const canvas = document.querySelector('canvas.webgl')
 
 // Scene
 const scene = new THREE.Scene()
+
 
 /**
  * Debug
@@ -37,7 +35,7 @@ var gui = new guify({
 });
 
 const guiDummy = {}
-guiDummy.clearColor = '#141d29';
+guiDummy.clearColor = '#080024';
 
 
 /**
@@ -53,6 +51,7 @@ window.addEventListener('resize', () => {
     // Update sizes
     sizes.width = window.innerWidth
     sizes.height = window.innerHeight
+
     sizes.pixelRatio = Math.min(window.devicePixelRatio, 2)
 
     // Update camera
@@ -73,6 +72,7 @@ window.addEventListener('resize', () => {
 
 })
 
+
 /**
  * Camera
  */
@@ -86,6 +86,7 @@ scene.add(camera)
 // Controls
 const controls = new OrbitControls(camera, canvas)
 controls.enableDamping = true
+
 
 /**
  * terrain
@@ -217,25 +218,17 @@ gui.Register({
 
 // Uniforms
 terrain.uniforms = {
-    uTextureFrequency: {
-        value: 10.0
-    },
-    uTexture: {
-        value: terrain.texture.instance
-    },
-    uElevation: {
-        value: 2
-    },
-    uTime: {
-        value: 0
-    },
-    uHslHue: {value: 1.0}, // 1.0
-    uHslHueOffset: {value: 0 }, // 0
-    uHslHueFrequency: {value: 10.0 }, // 10.0
-    uHslTimeFrequency: {value: 0.03 }, // 0.05
-    uHslLightness: {value: 0.75}, // 0.75
-    uHslLightnessVariation: {value: 0.25}, // 0.25
-    uHslLightnessFrequency: {value: 20.0 }, // 20.0
+    uTextureFrequency: {value: 10.0 },
+    uTexture: {value: terrain.texture.instance},
+    uElevation: {value: 2},
+    uTime: { value: 0},
+    uHslHue: {value: 1.0},
+    uHslHueOffset: {value: 0 },
+    uHslHueFrequency: {value: 10.0 },
+    uHslTimeFrequency: {value: 0.03 },
+    uHslLightness: {value: 0.75},
+    uHslLightnessVariation: {value: 0.25},
+    uHslLightnessFrequency: {value: 20.0 },
 }
 
 gui.Register({
@@ -417,8 +410,7 @@ effectComposer.addPass(renderPass)
 // Bokeh Pass Blur
 const bokehPass = new BokehPass(scene, camera, {
     focus: 1.0,
-    aperture: 0.025,
-    // aperture: 0.01,
+    aperture: 0.015,
     maxblur: 0.01,
 
     width: sizes.width * sizes.pixelRatio,
@@ -470,6 +462,7 @@ gui.Register({
     max: 0.02,
     step: 0.0001,
 })
+
 
 /**
  * Animate
