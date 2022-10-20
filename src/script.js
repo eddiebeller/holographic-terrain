@@ -56,8 +56,8 @@ window.addEventListener('resize', () => {
   sizes.pixelRatio = Math.min(window.devicePixelRatio, 2);
 
   // Update camera
-  camera.aspect = sizes.width / sizes.height;
-  camera.updateProjectionMatrix();
+  camera.instance.aspect = sizes.width / sizes.height;
+  camera.instance.updateProjectionMatrix();
 
   // Update renderer
   renderer.setSize(sizes.width, sizes.height);
@@ -75,20 +75,23 @@ window.addEventListener('resize', () => {
 /**
  * Camera
  */
+const camera = {};
+camera.position = new THREE.Vector3();
+camera.rotation = new THREE.Euler();
+camera.rotation.reorder('YXZ');
+
 // Base camera
-const camera = new THREE.PerspectiveCamera(
+camera.instance = new THREE.PerspectiveCamera(
   75,
   sizes.width / sizes.height,
   0.1,
   100
 );
-camera.rotation.reorder('YXZ');
-scene.add(camera);
+camera.instance.rotation.reorder('YXZ');
+scene.add(camera.instance);
 
-window.camera = camera;
-
-// Orbit Controls
-const orbitControls = new OrbitControls(camera, canvas);
+// Orbit controls
+const orbitControls = new OrbitControls(camera.instance, canvas);
 orbitControls.enabled = false;
 orbitControls.enableDamping = true;
 
@@ -103,7 +106,7 @@ gui.Register({
   object: orbitControls,
   property: 'enabled',
   type: 'checkbox',
-  label: 'OrbitControls.enabled',
+  label: 'orbitControls.enabled',
 });
 
 /**
@@ -111,10 +114,6 @@ gui.Register({
  */
 
 const terrain = {};
-
-// Geometry
-terrain.geometry = new THREE.PlaneGeometry(1, 1, 1000, 1000);
-terrain.geometry.rotateX(-Math.PI * 0.5);
 
 // Texture
 terrain.texture = {};
@@ -268,6 +267,10 @@ gui.Register({
   step: 0.001,
   onChange: terrain.texture.update,
 });
+
+// Geometry
+terrain.geometry = new THREE.PlaneGeometry(1, 1, 1000, 1000);
+terrain.geometry.rotateX(-Math.PI * 0.5);
 
 // Uniforms
 terrain.uniforms = {
@@ -557,9 +560,11 @@ gui.Register({
   max: 2,
   step: 0.001,
 });
+
 /**
  * Renderer
  */
+
 const renderer = new THREE.WebGLRenderer({
   canvas: canvas,
   // antialias: true,
@@ -598,11 +603,11 @@ effectComposer.setSize(sizes.width, sizes.height);
 effectComposer.setPixelRatio(sizes.pixelRatio);
 
 // Render Pass
-const renderPass = new RenderPass(scene, camera);
+const renderPass = new RenderPass(scene, camera.instance);
 effectComposer.addPass(renderPass);
 
 // Bokeh Pass Blur
-const bokehPass = new BokehPass(scene, camera, {
+const bokehPass = new BokehPass(scene, camera.instance, {
   focus: 1.0,
   aperture: 0.015,
   maxblur: 0.01,
@@ -665,32 +670,54 @@ view.settings = [
     position: { x: 0, y: 2.126, z: -0.172 },
     rotation: { x: -1.489, y: -Math.PI, z: 0 },
     focus: 2.14,
+    parallaxMultiplier: 0.22,
   },
   {
     position: { x: 1, y: 0.847, z: -0.133 },
     rotation: { x: -0.682, y: 1.698, z: 1.43 },
     focus: 1.14,
+    parallaxMultiplier: 0.12,
   },
   {
     position: { x: 0.276, y: 0.863, z: -0.99 },
     rotation: { x: -0.7, y: 2.869, z: 0 },
     focus: 1.52,
+    parallaxMultiplier: 0.12,
   },
   {
     position: { x: 1.218, y: 1.458, z: -0.1315 },
     rotation: { x: -0.948, y: 1.678, z: 0 },
     focus: 1.85,
+    parallaxMultiplier: 0.15,
   },
 ];
 
+// Parallax
+view.parallax = {};
+view.parallax.target = {};
+view.parallax.target.x = 0;
+view.parallax.target.y = 0;
+view.parallax.eased = {};
+view.parallax.eased.x = 0;
+view.parallax.eased.y = 0;
+view.parallax.eased.multiplier = 4;
+
+window.addEventListener('mousemove', (event) => {
+  view.parallax.target.x =
+    (event.clientX / sizes.width - 0.5) * view.parallax.multiplier;
+  view.parallax.target.y =
+    -(event.clientY / sizes.height - 0.5) * view.parallax.multiplier;
+});
+
 view.change = (index) => {
   const viewSetting = view.settings[index];
-
   camera.position.copy(viewSetting.position);
   camera.rotation.x = viewSetting.rotation.x;
   camera.rotation.y = viewSetting.rotation.y;
 
   bokehPass.materialBokeh.uniforms.focus.value = viewSetting.focus;
+
+  view.parallax.multiplier = viewSetting.parallaxMultiplier;
 };
 
 view.change(0);
@@ -722,15 +749,34 @@ const tick = () => {
   const deltaTime = elapsedTime - lastElapsedTime;
   lastElapsedTime = elapsedTime;
 
-  // Update controls
-  orbitControls.update();
-
   // Update terrain
   terrain.uniforms.uTime.value = elapsedTime;
 
+  // Update controls
+  if (orbitControls.enabled) {
+    orbitControls.update();
+  }
+
+  // Camera
+  camera.instance.position.copy(camera.position);
+
+  view.parallax.eased.x +=
+    (view.parallax.target.x - view.parallax.eased.x) *
+    deltaTime *
+    view.parallax.eased.multiplier;
+  view.parallax.eased.y +=
+    (view.parallax.target.y - view.parallax.eased.y) *
+    deltaTime *
+    view.parallax.eased.multiplier;
+  camera.instance.translateX(view.parallax.eased.x);
+  camera.instance.translateY(view.parallax.eased.y);
+
+  camera.instance.rotation.x = camera.rotation.x;
+  camera.instance.rotation.y = camera.rotation.y;
+
   // Render
-  // renderer.render(scene, camera)
-  effectComposer.render(scene, camera);
+  // renderer.render(scene, camera.instance)
+  effectComposer.render();
 
   // Call tick again on the next frame
   window.requestAnimationFrame(tick);
