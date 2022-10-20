@@ -83,16 +83,28 @@ const camera = new THREE.PerspectiveCamera(
   100
 );
 camera.rotation.reorder('YXZ');
-camera.position.x = 1;
-camera.position.y = 1;
-camera.position.z = 0;
 scene.add(camera);
 
 window.camera = camera;
 
 // Orbit Controls
-const OrbitControl = new OrbitControls(camera, canvas);
-OrbitControl.enableDamping = true;
+const orbitControls = new OrbitControls(camera, canvas);
+orbitControls.enabled = false;
+orbitControls.enableDamping = true;
+
+gui.Register({
+  type: 'folder',
+  label: 'camera',
+  open: false,
+});
+
+gui.Register({
+  folder: 'camera',
+  object: orbitControls,
+  property: 'enabled',
+  type: 'checkbox',
+  label: 'OrbitControls.enabled',
+});
 
 /**
  * terrain
@@ -665,9 +677,9 @@ view.settings = [
     focus: 1.52,
   },
   {
-    position: { x: 0.0105, y: 1.317, z: -0.001 },
-    rotation: { x: -1.562, y: 1.67, z:0  },
-    focus: 1.1,
+    position: { x: 1.218, y: 1.458, z: -0.1315 },
+    rotation: { x: -0.948, y: 1.678, z: 0 },
+    focus: 1.85,
   },
 ];
 
@@ -711,7 +723,7 @@ const tick = () => {
   lastElapsedTime = elapsedTime;
 
   // Update controls
-  OrbitControl.update();
+  orbitControls.update();
 
   // Update terrain
   terrain.uniforms.uTime.value = elapsedTime;
