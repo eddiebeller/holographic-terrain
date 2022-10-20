@@ -1,41 +1,44 @@
 @font-face {
-	font-family: 'Ailerons';
-	src: url('./fonts/Ailerons-Regular.woff') format('woff2'),
-		url('./fonts/Ailerons-Regular.woff') format('woff');
-	font-weight: normal;
-	font-style: normal;
-	font-display: block;
+  font-family: 'Ailerons';
+  src: url('./fonts/Ailerons-Regular.woff') format('woff2'),
+    url('./fonts/Ailerons-Regular.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
 }
 
 * {
-	margin: 0;
-	padding: 0;
+  margin: 0;
+  padding: 0;
 }
 
 html,
 body {
-	overflow: hidden;
+  overflow: hidden;
 }
 
 *::selection {
-	background-color: #ffffff22;
+  background-color: #ffffff22;
 }
 
 .webgl {
-	position: fixed;
-	top: 0;
-	left: 0;
-	outline: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  outline: none;
 }
 .heading {
-	font-family: Ailerons, Helvetica, Arial, sans-serif;
-	position: absolute;
-	top: calc(50% - 14vmin / 2);
-	left: 0;
-	width: 100%;
-	text-align: center;
-	color: #ffffff;
-	font-size: 14vh;
-	text-transform: uppercase;
-	outline: none;
+  font-family: Ailerons, Helvetica, Arial, sans-serif;
+  position: absolute;
+  top: calc(50% - 14vmin / 2);
+  left: 0;
+  width: 100%;
+  text-align: center;
+  color: #ffffff;
+  font-size: clamp(8vh, 12vw, 14vh);
+  text-transform: uppercase;
+  outline: none;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+
 }
