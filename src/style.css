@@ -15,6 +15,7 @@
 html,
 body {
   overflow: hidden;
+  background: #150029;
 }
 
 *::selection {
@@ -38,7 +39,6 @@ body {
   font-size: clamp(8vh, 12vw, 14vh);
   text-transform: uppercase;
   outline: none;
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
-
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
