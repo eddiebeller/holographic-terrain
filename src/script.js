@@ -1,5 +1,6 @@
 import './style.css';
 import * as THREE from 'three';
+import gsap from 'gsap';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 // Guify debugger
 import guify from 'guify';
@@ -670,7 +671,7 @@ view.settings = [
     position: { x: 0, y: 2.126, z: -0.172 },
     rotation: { x: -1.489, y: -Math.PI, z: 0 },
     focus: 2.14,
-    parallaxMultiplier: 0.22,
+    parallaxMultiplier: 0.25,
   },
   {
     position: { x: 1, y: 0.847, z: -0.133 },
@@ -688,11 +689,13 @@ view.settings = [
     position: { x: 1.218, y: 1.458, z: -0.1315 },
     rotation: { x: -0.948, y: 1.678, z: 0 },
     focus: 1.85,
-    parallaxMultiplier: 0.15,
+    parallaxMultiplier: 0.2,
   },
 ];
 
-// Parallax
+view.current = null;
+
+// Parallax settings
 view.parallax = {};
 view.parallax.target = {};
 view.parallax.target.x = 0;
@@ -709,15 +712,20 @@ window.addEventListener('mousemove', (event) => {
     -(event.clientY / sizes.height - 0.5) * view.parallax.multiplier;
 });
 
+// Change position
 view.change = (index) => {
   const viewSetting = view.settings[index];
+
+  // Camera
   camera.position.copy(viewSetting.position);
   camera.rotation.x = viewSetting.rotation.x;
   camera.rotation.y = viewSetting.rotation.y;
-
+  // Bokeh
   bokehPass.materialBokeh.uniforms.focus.value = viewSetting.focus;
-
+  // Parallax
   view.parallax.multiplier = viewSetting.parallaxMultiplier;
+  // Save
+  view.current = viewSetting;
 };
 
 view.change(0);
@@ -737,6 +745,20 @@ for (const settingIndex in view.settings) {
     },
   });
 }
+
+// Focus animation
+const changeFocus = () => {
+  console.log('changeFocus');
+  gsap.to(bokehPass.materialBokeh.uniforms.focus, {
+    duration: 0.5 + Math.random() * 3,
+    delay: 0.5 + Math.random() * 1,
+    ease: 'power2.InOut',
+    onComplete: changeFocus,
+    value: view.current.focus + Math.random() - 0.2,
+  });
+};
+
+changeFocus();
 
 /**
  * Animate
